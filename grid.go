@@ -72,17 +72,16 @@ func Run(g *Game) error {
 	g.Scene.Setup()
 
 	for !window.ShouldClose() {
-		glfw.PollEvents()
-
 		time = float32(glfw.GetTime())
 		deltaTime = time - previousTime
+
+		glfw.PollEvents()
 
 		gl.ClearColor(0.2, 0.3, 0.3, 0.5)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		g.Scene.Update(deltaTime)
 		g.Scene.Draw(deltaTime)
-
 		previousTime = time
 
 		window.SwapBuffers()
