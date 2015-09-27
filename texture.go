@@ -17,7 +17,7 @@ type Texture struct {
 }
 
 func (t Texture) Bind() {
-	gl.BindTexture(gl.TEXTURE_2D, t.Id)
+	gl.BindTexture(gl.TEXTURE_2D, t.Id)	
 }
 
 func CreateTexture(file string) (Texture, error) {
@@ -37,6 +37,7 @@ func CreateTexture(file string) (Texture, error) {
 	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
 	width, height := int32(rgba.Rect.Size().X), int32(rgba.Rect.Size().Y)
 	var texture uint32
+
 	gl.GenTextures(1, &texture)
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, texture)

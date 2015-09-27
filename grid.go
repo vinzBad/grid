@@ -1,10 +1,12 @@
 package grid
 
 import (
-	"github.com/go-gl/gl/v3.3-core/gl"
-	"github.com/go-gl/glfw/v3.1/glfw"
+	"fmt"
 	"log"
 	"runtime"
+
+	"github.com/go-gl/gl/v3.3-core/gl"
+	"github.com/go-gl/glfw/v3.1/glfw"
 )
 
 const (
@@ -22,19 +24,20 @@ type Game struct {
 }
 
 type Scene interface {
+	Setup()
 	Draw(dt float32)
 	Update(dt float32)
 }
 
-func Run(g *Game) {
+func Run(g *Game) error {
 	if g.Scene == nil {
-		log.Fatalln("Game has a empty Scene property ")
+		return fmt.Errorf("Scene property of given Game struct is empty")
 	}
 
 	// GLFW event handling must run on the main OS thread
 	runtime.LockOSThread()
 	if err := glfw.Init(); err != nil {
-		log.Fatalln("glfw.Init failed:", err)
+		return fmt.Errorf("glfw.Init failed: %s", err)
 	}
 	defer glfw.Terminate()
 
@@ -51,33 +54,39 @@ func Run(g *Game) {
 
 	window, err := glfw.CreateWindow(int(g.Width), int(g.Height), g.Title, nil, nil)
 	if err != nil {
-		log.Fatalln("glfw.CreateWindow failed:", err)
+		return fmt.Errorf("glfw.CreateWindow failed: %s", err)
 	}
 	window.MakeContextCurrent()
 
 	// Initialize Glow
 	if err := gl.Init(); err != nil {
-		log.Fatalln("gl.Init failed:", err)
+		return fmt.Errorf("gl.Init failed:", err)
 	}
 
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	log.Println("gl.Init successful, OpenGL version:", version)
 
-	var previousTime, deltaTime float32
+	var previousTime, deltaTime, time float32
+	previousTime = float32(glfw.GetTime()) - 1.0/60.0
 
-	deltaTime = 1.0 / 60.0
+	g.Scene.Setup()
 
 	for !window.ShouldClose() {
-		previousTime = float32(glfw.GetTime())
+		glfw.PollEvents()
+
+		time = float32(glfw.GetTime())
+		deltaTime = time - previousTime
+
+		gl.ClearColor(0.2, 0.3, 0.3, 0.5)
+		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		g.Scene.Update(deltaTime)
 		g.Scene.Draw(deltaTime)
 
-		window.SwapBuffers()
-		glfw.PollEvents()
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		previousTime = time
 
-		deltaTime = float32(glfw.GetTime()) - previousTime
+		window.SwapBuffers()
 	}
 
+	return nil
 }

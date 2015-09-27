@@ -16,10 +16,42 @@ func (s Shader) Use() {
 	gl.UseProgram(s.Program)
 }
 
+func (s Shader) UniformLocation(name string) (int32, error) {
+	loc := gl.GetUniformLocation(s.Program, gl.Str(name+"\x00"))
+	if loc < 0 {
+		return 0, fmt.Errorf("Unable to get index of uniform '%s'", name)
+	}
+	return loc, nil
+}
+
+func (s Shader) AttribLocation(name string) (uint32, error) {
+	loc := gl.GetAttribLocation(s.Program, gl.Str(name+"\x00"))
+	if loc < 0 {
+		return 0, fmt.Errorf("Unable to get index of attribute '%s'", name)
+	}
+	return uint32(loc), nil
+}
+
+func (s Shader) SetAttrib(name string, count int32, xtype uint32, strideInByte int32, offsetInByte int) error {
+	loc, err := s.AttribLocation(name)
+	if err != nil {
+		return err
+	}
+	gl.EnableVertexAttribArray(loc)
+	gl.VertexAttribPointer(loc,
+		count,
+		xtype,
+		false,
+		strideInByte,
+		gl.PtrOffset(offsetInByte))
+
+	return nil
+}
+
 func compileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
-	csource := gl.Str(source)
+	csource := gl.Str(source + "\x00")
 	gl.ShaderSource(shader, 1, &csource, nil)
 	gl.CompileShader(shader)
 
@@ -53,6 +85,7 @@ func CreateShader(vertexShaderSource, fragmentShaderSource string) (Shader, erro
 
 	gl.AttachShader(shader.Program, vertexShader)
 	gl.AttachShader(shader.Program, fragmentShader)
+	gl.BindFragDataLocation(shader.Program, 0, gl.Str("outColor\x00"))
 	gl.LinkProgram(shader.Program)
 
 	var status int32
